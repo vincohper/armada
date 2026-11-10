@@ -1,0 +1,81 @@
+Subject: [PATCH] drm/panel: visionox-vtdr6130-cog: add Odin 2 Portal
+
+Some AYN Odin 2 Portal units ship a Visionox VTDR6130 command-mode DSC
+panel (Android: qcom,mdss_dsi_vtdr6130_dsc_cmd, 60/120 Hz) instead of
+the ICNA3512 that the Portal device tree selects, leaving the internal
+display black. The panel uses the same 1080x1920 timings, DSC setup and
+init sequence as the Odin 3 Portal, so reuse them with the SM8550
+regulator set of the Odin 2 Portal and the captured 3413 maximum
+brightness.
+
+--- a/drivers/gpu/drm/panel/panel-visionox-vtdr6130-cog.c
++++ b/drivers/gpu/drm/panel/panel-visionox-vtdr6130-cog.c
+@@ -71,6 +71,7 @@
+ 	const struct vtdr6130_supply_config *supply_config;
+ 	unsigned int display_off_delay_ms;
+ 	unsigned int default_brightness;
++	unsigned int max_brightness;
+ 	bool vendor_dcs_long;
+ 	bool needs_d0;
+ 	bool off_in_lpm;
+@@ -554,6 +555,43 @@
+ 	.frame_len_60 = 0x7be,
+ };
+ 
++/* Odin 2 Portal: SM8550 supplies, 1080x1920 DSC modes shared with the Odin 3 Portal. */
++static const struct regulator_bulk_data odin2portal_panel_supplies[] = {
++	{ .supply = "vdd" },
++	{ .supply = "vddio" },
++	{ .supply = "vci" },
++	{ .supply = "disp" },
++	{ .supply = "blvdd" },
++};
++
++static struct panel_desc vtdr6130_odin2portal_desc = {
++	.modes = vtdr6130_odin3portal_modes,
++	.num_modes = ARRAY_SIZE(vtdr6130_odin3portal_modes),
++	.bpc = 8,
++	.lanes = 4,
++	.format = MIPI_DSI_FMT_RGB888,
++	.mode_flags = MIPI_DSI_MODE_NO_EOT_PACKET |
++		      MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM,
++	.init_sequence = vtdr6130_odin3portal_init_sequence,
++	.vendor_dcs_long = true,
++	.off_in_lpm = true,
++	.dsc = {
++		.dsc_version_major = 1,
++		.dsc_version_minor = 1,
++		.slice_height = 12,
++		.slice_width = 540,
++		.slice_count = 2,
++		.bits_per_component = 8,
++		.bits_per_pixel = 8 << 4,
++		.block_pred_enable = true,
++	},
++	.supplies = odin2portal_panel_supplies,
++	.num_supplies = ARRAY_SIZE(odin2portal_panel_supplies),
++	.display_off_delay_ms = 20,
++	.default_brightness = 1024,
++	.max_brightness = 3413,
++};
++
+ static int vtdr6130_power_off(struct panel_info *pinfo, unsigned int count)
+ {
+ 	const struct vtdr6130_supply_config *config = pinfo->desc->supply_config;
+@@ -799,7 +837,7 @@
+ 	const struct backlight_properties props = {
+ 		.type = BACKLIGHT_RAW,
+ 		.brightness = pinfo->desc->default_brightness ?: 4095,
+-		.max_brightness = 4095,
++		.max_brightness = pinfo->desc->max_brightness ?: 4095,
+ 	};
+ 
+ 	return devm_backlight_device_register(dev, dev_name(dev), dev, dsi,
+@@ -966,6 +1004,7 @@
+ }
+ 
+ static const struct of_device_id vtdr6130_of_match[] = {
++	{ .compatible = "vtdr6130,o2p", .data = &vtdr6130_odin2portal_desc },
+ 	{ .compatible = "vtdr6130,o3p", .data = &vtdr6130_odin3portal_desc },
+ 	{ .compatible = "vtdr6130,rpduo", .data = &vtdr6130_duo_desc },
+ 	{ .compatible = "vtdr6130,rp6", .data = &vtdr6130_rp6_desc },

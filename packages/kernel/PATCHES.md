@@ -1271,3 +1271,8 @@ no equivalent submission was found, or a permanent URL to the upstream submissio
   source: https://github.com/ROCKNIX/distribution/blob/abfdcfb57ff42180a50fca60a2a150641608d57e/projects/ROCKNIX/devices/SM8550/patches/linux/0508-ROCKNIX-rp6-panel-frame-length-calibration.patch
   upstream: local
   notes: Armada reimplements the RP6 interface for the Odin 3 Portal, whose init sequence reaches B1 through offset writes.
+
+- `patches/1305a-drm-panel-vtdr6130-add-odin2portal.patch`
+  source: https://github.com/armada-os/armada/issues/845
+  upstream: local
+  notes: Odin 2 Portal units with a Visionox VTDR6130 panel (Android `qcom,mdss_dsi_vtdr6130_dsc_cmd`). Reuses the Odin 3 Portal modes, DSC and init sequence with the SM8550 supplies. Untested on hardware.
