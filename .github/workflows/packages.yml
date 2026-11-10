@@ -59,8 +59,12 @@ jobs:
               *)                            runner=ubuntu-24.04-arm ;;
             esac
 
+            upstream_ref="ghcr.io/armada-os/armada/pkg/${pkg}:${hash}"
             if skopeo inspect --raw "docker://${ref}" >/dev/null 2>&1; then
               echo "::notice::${pkg} already built (${hash})"
+            elif skopeo inspect --raw "docker://${upstream_ref}" >/dev/null 2>&1; then
+              echo "::notice::${pkg} reusing upstream build (${hash})"
+              ref="${upstream_ref}"
             else
               echo "::notice::${pkg} needs building (${hash})"
               matrix="$(jq -c --arg p "${pkg}" --arg r "${runner}" --arg h "${hash}" \

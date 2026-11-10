@@ -145,6 +145,13 @@ if [ -z "${FAST:-}" ]; then
     fi
 fi
 
+# Newer Fedora kernel-headers use __u128 in asm/ptrace.h, which the tools/ copy
+# of linux/types.h lacks; resolve_btfids' libbpf build then fails.
+TOOLS_TYPES="${SRC_DIR}/tools/include/uapi/linux/types.h"
+if [ -f "${TOOLS_TYPES}" ] && ! grep -q '__u128' "${TOOLS_TYPES}"; then
+    sed -i 's|^#define __bitwise$|&\ntypedef unsigned __int128 __u128;\ntypedef __int128 __s128;|' "${TOOLS_TYPES}"
+fi
+
 # ---------- 3. Vendor DTS files (kernel only builds DTBs listed in its Makefile) ----------
 echo "==> Copying DTS files into arch/arm64/boot/dts/qcom/"
 DTS_TARGET="${SRC_DIR}/arch/arm64/boot/dts/qcom"
